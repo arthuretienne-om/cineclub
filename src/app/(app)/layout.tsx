@@ -17,9 +17,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .single()
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen relative" style={{ background: 'var(--bg)' }}>
+      {/* Subtle horizontal scan lines */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.015]" style={{
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #c2703e 2px, #c2703e 3px)',
+        backgroundSize: '100% 3px',
+      }} />
       <Nav userName={profile?.name ?? user.email ?? 'You'} />
-      <main className="max-w-4xl mx-auto px-4 py-6">{children}</main>
+      <main className="max-w-4xl mx-auto px-4 py-8 relative">{children}</main>
     </div>
   )
 }

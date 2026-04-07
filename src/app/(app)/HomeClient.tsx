@@ -55,10 +55,7 @@ export default function HomeClient({
     setDrawing(true)
     setSpinning(true)
 
-    const { data: bucket } = await supabase
-      .from('movies')
-      .select('*')
-      .eq('status', 'bucket')
+    const { data: bucket } = await supabase.from('movies').select('*').eq('status', 'bucket')
 
     if (!bucket || bucket.length === 0) {
       setDrawing(false)
@@ -72,7 +69,6 @@ export default function HomeClient({
     }
 
     const picked = bucket[Math.floor(Math.random() * bucket.length)] as Movie
-
     await supabase.from('movies').update({ status: 'selected', selected_at: new Date().toISOString() }).eq('id', picked.id)
 
     const next = getNextDate(freq)
@@ -106,95 +102,104 @@ export default function HomeClient({
   const needsInvite = otherMembers.length === 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 curtain-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Dashboard</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {FREQUENCY_LABELS[freq]} · {bucketCount} in bucket
+          <span className="marquee">Now Playing</span>
+          <h1 className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', color: 'var(--cream)', fontWeight: 700 }}>
+            Dashboard
+          </h1>
+          <p className="mt-1" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+            {FREQUENCY_LABELS[freq]} &middot; {bucketCount} in bucket
           </p>
         </div>
         <button
           onClick={() => setShowSettings(v => !v)}
-          className="p-2 rounded-lg transition-colors"
-          style={{ color: 'var(--text-muted)', background: showSettings ? 'var(--surface-2)' : 'transparent' }}
+          className="p-2.5 rounded transition-colors"
+          style={{ color: 'var(--text-muted)', background: showSettings ? 'var(--surface-2)' : 'transparent', border: '1px solid var(--border)' }}
         >
-          <SettingsIcon size={18} />
+          <SettingsIcon size={16} />
         </button>
       </div>
 
-      {/* Invite banner — shown when no other members yet */}
+      {/* Invite banner */}
       {needsInvite && (
-        <div className="rounded-xl p-5 pop-in" style={{ background: 'var(--surface)', border: '1px solid var(--accent)', borderColor: 'var(--accent-dim)' }}>
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-2)' }}>
-              <Users size={20} style={{ color: 'var(--accent)' }} />
+        <div className="ticket rounded-lg overflow-hidden pop-in">
+          <div className="p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ border: '1.5px solid var(--copper)', background: 'var(--surface-2)' }}>
+                <Users size={18} style={{ color: 'var(--copper)' }} />
+              </div>
+              <div className="flex-1">
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--cream)', fontWeight: 600 }}>
+                  Send a ticket to your sister
+                </h3>
+                <p className="mt-1.5" style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  Share this link — she signs up and you both share the same bucket list, chat, and ratings.
+                </p>
+                <button
+                  onClick={copyInviteLink}
+                  className="flex items-center gap-2 mt-3 px-4 py-2 rounded text-sm font-medium transition-all hover:opacity-85"
+                  style={{ background: 'var(--copper)', color: 'var(--cream)', fontFamily: 'var(--font-display)', letterSpacing: '0.03em' }}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? 'Copied!' : 'Copy invite link'}
+                </button>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-bold" style={{ color: 'var(--text)' }}>Invite your sister!</h3>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                Send her this link — she signs up and you&apos;ll both share the same bucket list, chat, and movie ratings.
-              </p>
-              <button
-                onClick={copyInviteLink}
-                className="flex items-center gap-2 mt-3 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
-                style={{ background: 'var(--accent)', color: '#0d0d0f' }}
-              >
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? 'Copied!' : 'Copy invite link'}
-              </button>
-            </div>
+          </div>
+          <div className="perforation mx-4 pb-3 pt-3">
+            <p className="text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
+              ADMIT TWO &middot; VALID FOREVER
+            </p>
           </div>
         </div>
       )}
 
       {/* Members */}
-      <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Users size={14} style={{ color: 'var(--text-muted)' }} />
-            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Members</span>
-          </div>
-          {!needsInvite && (
-            <button
-              onClick={copyInviteLink}
-              className="flex items-center gap-1 text-xs font-medium transition-opacity hover:opacity-70"
-              style={{ color: 'var(--accent)' }}
-            >
-              {copied ? <Check size={12} /> : <LinkIcon size={12} />}
-              {copied ? 'Copied!' : 'Invite link'}
-            </button>
-          )}
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {members.map(m => (
-            <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--border)', color: 'var(--accent)' }}>
-                {m.name[0]?.toUpperCase()}
+      <div className="flex items-center justify-between py-3 px-4 rounded" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-3">
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Crew
+          </span>
+          <div className="flex gap-1.5">
+            {members.map(m => (
+              <div key={m.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--copper-dim)', fontFamily: 'var(--font-display)', fontSize: '0.6rem', color: 'var(--cream)', fontWeight: 700 }}>
+                  {m.name[0]?.toUpperCase()}
+                </div>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                  {m.name}{m.id === userId ? '' : ''}
+                </span>
               </div>
-              <span className="text-sm" style={{ color: 'var(--text)' }}>
-                {m.name}{m.id === userId ? ' (you)' : ''}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+        {!needsInvite && (
+          <button onClick={copyInviteLink} className="flex items-center gap-1 transition-opacity hover:opacity-70" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--copper)', letterSpacing: '0.04em' }}>
+            {copied ? <Check size={10} /> : <LinkIcon size={10} />}
+            {copied ? 'Copied' : 'Invite'}
+          </button>
+        )}
       </div>
 
-      {/* Frequency settings panel */}
+      {/* Settings panel */}
       {showSettings && (
-        <div className="rounded-xl p-4 pop-in" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-muted)' }}>Watch frequency</p>
-          <div className="flex gap-2 flex-wrap">
+        <div className="ticket rounded-lg p-5 pop-in">
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Watch Frequency</p>
+          <div className="flex gap-2 mt-3 flex-wrap">
             {(Object.keys(FREQUENCY_LABELS) as Frequency[]).map(f => (
               <button
                 key={f}
                 onClick={() => saveFrequency(f)}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                className="px-4 py-2 rounded text-sm transition-all"
                 style={{
-                  background: freq === f ? 'var(--accent)' : 'var(--surface-2)',
-                  color: freq === f ? '#0d0d0f' : 'var(--text)',
-                  border: '1px solid var(--border)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: freq === f ? 600 : 400,
+                  background: freq === f ? 'var(--copper)' : 'var(--surface-2)',
+                  color: freq === f ? 'var(--cream)' : 'var(--text-dim)',
+                  border: `1px solid ${freq === f ? 'var(--copper)' : 'var(--border)'}`,
                 }}
               >
                 {FREQUENCY_LABELS[f]}
@@ -205,73 +210,76 @@ export default function HomeClient({
       )}
 
       {/* Current movie */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <div className="sprocket rounded-lg overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         {movie ? (
-          <div className="flex gap-0">
-            <div className="relative w-36 flex-shrink-0">
-              {posterUrl ? (
-                <Image
-                  src={posterUrl}
-                  alt={movie.title}
-                  width={144}
-                  height={216}
-                  className={`w-full h-full object-cover ${spinning ? 'draw-spin' : ''}`}
-                  style={{ minHeight: 216 }}
-                />
-              ) : (
-                <div className="w-full flex items-center justify-center" style={{ height: 216, background: 'var(--surface-2)' }}>
-                  <Film size={40} style={{ color: 'var(--text-muted)' }} />
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--accent)' }}>
-                      Now watching
-                    </p>
-                    <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>{movie.title}</h2>
-                    <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {movie.release_date?.slice(0, 4)} · Added by {movie.added_by_name}
-                    </p>
+          <div>
+            <div className="marquee w-full text-center">Now Showing</div>
+            <div className="flex gap-0">
+              <div className="relative w-40 flex-shrink-0">
+                {posterUrl ? (
+                  <Image
+                    src={posterUrl}
+                    alt={movie.title}
+                    width={160}
+                    height={240}
+                    className={`w-full h-full object-cover ${spinning ? 'draw-spin' : ''}`}
+                    style={{ minHeight: 240 }}
+                  />
+                ) : (
+                  <div className="w-full flex items-center justify-center" style={{ height: 240, background: 'var(--surface-2)' }}>
+                    <Film size={40} style={{ color: 'var(--text-muted)' }} />
                   </div>
-                </div>
-                {movie.overview && (
-                  <p className="text-sm mt-3 line-clamp-3" style={{ color: 'var(--text-muted)' }}>
-                    {movie.overview}
-                  </p>
                 )}
               </div>
 
-              <div className="flex gap-2 mt-4 flex-wrap">
-                <button
-                  onClick={markWatched}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
-                  style={{ background: 'var(--accent)', color: '#0d0d0f' }}
-                >
-                  Mark as watched
-                </button>
-                <button
-                  onClick={drawMovie}
-                  disabled={drawing}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-70 disabled:opacity-40"
-                  style={{ background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }}
-                >
-                  Redraw
-                </button>
+              <div className="flex-1 p-5 flex flex-col justify-between">
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--cream)', fontWeight: 700, lineHeight: 1.2 }}>
+                    {movie.title}
+                  </h2>
+                  <p className="mt-1" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                    {movie.release_date?.slice(0, 4)} &middot; Added by {movie.added_by_name}
+                  </p>
+                  {movie.overview && (
+                    <p className="mt-3 line-clamp-3" style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                      {movie.overview}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-2 mt-5 flex-wrap">
+                  <button
+                    onClick={markWatched}
+                    className="px-4 py-2 rounded text-sm font-medium transition-all hover:opacity-85"
+                    style={{ fontFamily: 'var(--font-display)', background: 'var(--copper)', color: 'var(--cream)', letterSpacing: '0.03em' }}
+                  >
+                    Mark as watched
+                  </button>
+                  <button
+                    onClick={drawMovie}
+                    disabled={drawing}
+                    className="px-4 py-2 rounded text-sm transition-opacity hover:opacity-70 disabled:opacity-40"
+                    style={{ fontFamily: 'var(--font-body)', background: 'var(--surface-2)', color: 'var(--text-dim)', border: '1px solid var(--border)' }}
+                  >
+                    Redraw
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-4 ${spinning ? 'draw-spin' : ''}`}
-              style={{ background: 'var(--surface-2)' }}>
-              <Shuffle size={32} style={{ color: 'var(--accent)' }} />
+            {/* Film reel */}
+            <div
+              className={`w-20 h-20 rounded-full flex items-center justify-center mb-5 ${spinning ? 'reel-spin' : ''}`}
+              style={{ border: '2px solid var(--copper)', background: 'var(--surface-2)' }}
+            >
+              <Shuffle size={28} style={{ color: 'var(--copper)' }} />
             </div>
-            <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text)' }}>Ready to draw?</h2>
-            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--cream)', fontWeight: 600 }}>
+              Ready to draw?
+            </h2>
+            <p className="mt-2 mb-6" style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               {bucketCount > 0
                 ? `${bucketCount} movie${bucketCount > 1 ? 's' : ''} waiting in the bucket`
                 : 'Add movies to the bucket list first'}
@@ -279,11 +287,11 @@ export default function HomeClient({
             <button
               onClick={drawMovie}
               disabled={drawing || bucketCount === 0}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
-              style={{ background: 'var(--accent)', color: '#0d0d0f' }}
+              className="flex items-center gap-2.5 px-7 py-3 rounded text-sm font-medium transition-all disabled:opacity-40"
+              style={{ fontFamily: 'var(--font-display)', background: 'var(--copper)', color: 'var(--cream)', letterSpacing: '0.04em' }}
             >
-              <Shuffle size={16} />
-              {drawing ? 'Drawing...' : 'Draw a movie!'}
+              <Shuffle size={15} />
+              {drawing ? 'Drawing...' : 'Draw a movie'}
             </button>
           </div>
         )}
@@ -291,11 +299,11 @@ export default function HomeClient({
 
       {/* Next draw date */}
       {nextDate && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <Calendar size={16} style={{ color: 'var(--accent)' }} />
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Next draw: <span style={{ color: 'var(--text)' }}>{format(new Date(nextDate), 'EEEE, MMMM d')}</span>
+        <div className="flex items-center gap-3 px-4 py-3 rounded" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <Calendar size={14} style={{ color: 'var(--copper)' }} />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.03em' }}>
+            Next draw:{' '}
+            <span style={{ color: 'var(--text-dim)' }}>{format(new Date(nextDate), 'EEEE, MMMM d')}</span>
           </span>
         </div>
       )}

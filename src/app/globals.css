@@ -1,51 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 :root {
-  --bg: #0d0d0f;
-  --surface: #16161a;
-  --surface-2: #1e1e24;
-  --border: #2a2a32;
-  --accent: #e8c14e;
-  --accent-dim: #b8942a;
-  --text: #f0eff4;
-  --text-muted: #8a8a9a;
+  --bg: #1a1613;
+  --bg-warm: #1f1b17;
+  --surface: #2a2520;
+  --surface-2: #362f29;
+  --surface-3: #443c34;
+  --border: #4a4139;
+  --border-light: #5c5147;
+  --copper: #c2703e;
+  --copper-dim: #9e5a32;
+  --copper-glow: #d4853f;
+  --gold: #d4a34a;
+  --burgundy: #8b2252;
+  --cream: #faf7f2;
+  --cream-dim: #e8e0d4;
+  --paper: #f0e8da;
+  --text: #e7e0d5;
+  --text-dim: #c4bbb0;
+  --text-muted: #8a8078;
+  --ink: #2a1f18;
+
+  --font-display: 'Playfair Display', 'Georgia', serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-body);
 }
 
-@keyframes spin-draw {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(720deg) scale(1.15); }
-  100% { transform: rotate(1440deg) scale(1); }
+/* ============ FILM GRAIN OVERLAY ============ */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
 }
 
-.draw-spin {
-  animation: spin-draw 1.5s ease-in-out;
+/* ============ TICKET STUB ============ */
+.ticket {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
-@keyframes slide-in {
-  from { transform: translateY(8px); opacity: 0; }
+.ticket::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--copper) 0px,
+    var(--copper) 8px,
+    transparent 8px,
+    transparent 14px
+  );
+}
+
+/* ============ SPROCKET CARD ============ */
+.sprocket {
+  position: relative;
+}
+
+.sprocket::before,
+.sprocket::after {
+  content: '';
+  position: absolute;
+  top: 12px; bottom: 12px;
+  width: 8px;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0px,
+    transparent 4px,
+    var(--border) 4px,
+    var(--border) 12px,
+    transparent 12px,
+    transparent 16px
+  );
+  opacity: 0.5;
+}
+.sprocket::before { left: 4px; }
+.sprocket::after { right: 4px; }
+
+/* ============ PERFORATED TEAR ============ */
+.perforation {
+  border-top: 2px dashed var(--border);
+  position: relative;
+}
+
+.perforation::before,
+.perforation::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg);
+}
+.perforation::before { left: -8px; }
+.perforation::after { right: -8px; }
+
+/* ============ MARQUEE HEADER ============ */
+.marquee {
+  font-family: var(--font-display);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 0.65rem;
+  color: var(--copper);
+  background: var(--surface-2);
+  padding: 6px 16px;
+  display: inline-block;
+}
+
+/* ============ ANIMATIONS ============ */
+@keyframes reel-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes curtain-reveal {
+  from { transform: translateY(16px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
-.msg-in {
-  animation: slide-in 0.2s ease-out;
+@keyframes ticket-stamp {
+  0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.05) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-@keyframes pop-in {
-  0% { transform: scale(0.8); opacity: 0; }
-  70% { transform: scale(1.05); }
-  100% { transform: scale(1); opacity: 1; }
-}
+.reel-spin { animation: reel-spin 2s linear infinite; }
+.flicker { animation: flicker 3s ease-in-out infinite; }
+.curtain-in { animation: curtain-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.ticket-stamp { animation: ticket-stamp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-.pop-in {
-  animation: pop-in 0.35s ease-out;
-}
+.msg-in { animation: curtain-reveal 0.25s ease-out; }
+.pop-in { animation: ticket-stamp 0.35s ease-out; }
 
+@keyframes draw-reel {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(720deg) scale(1.1); }
+  100% { transform: rotate(1440deg) scale(1); }
+}
+.draw-spin { animation: draw-reel 1.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* ============ STAR RATING ============ */
+.star-btn {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.star-btn:hover { transform: scale(1.25); }
+
+/* ============ SCROLLBAR ============ */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* ============ SELECTION ============ */
+::selection {
+  background: var(--copper);
+  color: var(--cream);
+}
+
+/* ============ INPUT FOCUS ============ */
+input:focus, textarea:focus {
+  border-color: var(--copper) !important;
+  box-shadow: 0 0 0 1px var(--copper-dim);
+}
