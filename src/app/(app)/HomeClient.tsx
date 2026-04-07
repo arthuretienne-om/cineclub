@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getPosterUrl } from '@/lib/tmdb'
-import { Movie, Settings, Frequency } from '@/lib/types'
-import { Shuffle, Calendar, Film, Settings as SettingsIcon } from 'lucide-react'
+import { Movie, Settings, Frequency, Profile } from '@/lib/types'
+import { Shuffle, Calendar, Film, Settings as SettingsIcon, Copy, Check, Users, Link as LinkIcon } from 'lucide-react'
 import { addWeeks, addMonths, format } from 'date-fns'
 import Image from 'next/image'
 
@@ -27,11 +27,13 @@ export default function HomeClient({
   currentMovie,
   settings,
   bucketCount,
+  members,
 }: {
   userId: string
   currentMovie: Movie | null
   settings: Settings | null
   bucketCount: number
+  members: Pick<Profile, 'id' | 'name' | 'email'>[]
 }) {
   const [movie, setMovie] = useState<Movie | null>(currentMovie)
   const [freq, setFreq] = useState<Frequency>(settings?.frequency ?? 'biweekly')
@@ -39,14 +41,20 @@ export default function HomeClient({
   const [drawing, setDrawing] = useState(false)
   const [spinning, setSpinning] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [copied, setCopied] = useState(false)
   const supabase = createClient()
   const router = useRouter()
+
+  async function copyInviteLink() {
+    await navigator.clipboard.writeText(window.location.origin + '/auth')
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   async function drawMovie() {
     setDrawing(true)
     setSpinning(true)
 
-    // Fetch all bucket movies
     const { data: bucket } = await supabase
       .from('movies')
       .select('*')
@@ -59,18 +67,14 @@ export default function HomeClient({
       return
     }
 
-    // Mark previous selected as bucket (reset) - simple: keep as-is
     if (movie) {
       await supabase.from('movies').update({ status: 'bucket', selected_at: null }).eq('id', movie.id)
     }
 
-    // Pick random
     const picked = bucket[Math.floor(Math.random() * bucket.length)] as Movie
 
-    // Mark as selected
     await supabase.from('movies').update({ status: 'selected', selected_at: new Date().toISOString() }).eq('id', picked.id)
 
-    // Set next draw date
     const next = getNextDate(freq)
     await supabase.from('settings').update({ next_draw_date: next.toISOString() }).eq('id', 1)
     setNextDate(next.toISOString())
@@ -98,6 +102,8 @@ export default function HomeClient({
   }
 
   const posterUrl = movie?.poster_path ? getPosterUrl(movie.poster_path) : null
+  const otherMembers = members.filter(m => m.id !== userId)
+  const needsInvite = otherMembers.length === 0
 
   return (
     <div className="space-y-6">
@@ -116,6 +122,63 @@ export default function HomeClient({
         >
           <SettingsIcon size={18} />
         </button>
+      </div>
+
+      {/* Invite banner — shown when no other members yet */}
+      {needsInvite && (
+        <div className="rounded-xl p-5 pop-in" style={{ background: 'var(--surface)', border: '1px solid var(--accent)', borderColor: 'var(--accent-dim)' }}>
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--surface-2)' }}>
+              <Users size={20} style={{ color: 'var(--accent)' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold" style={{ color: 'var(--text)' }}>Invite your sister!</h3>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                Send her this link — she signs up and you&apos;ll both share the same bucket list, chat, and movie ratings.
+              </p>
+              <button
+                onClick={copyInviteLink}
+                className="flex items-center gap-2 mt-3 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
+                style={{ background: 'var(--accent)', color: '#0d0d0f' }}
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? 'Copied!' : 'Copy invite link'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Members */}
+      <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Users size={14} style={{ color: 'var(--text-muted)' }} />
+            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Members</span>
+          </div>
+          {!needsInvite && (
+            <button
+              onClick={copyInviteLink}
+              className="flex items-center gap-1 text-xs font-medium transition-opacity hover:opacity-70"
+              style={{ color: 'var(--accent)' }}
+            >
+              {copied ? <Check size={12} /> : <LinkIcon size={12} />}
+              {copied ? 'Copied!' : 'Invite link'}
+            </button>
+          )}
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {members.map(m => (
+            <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--border)', color: 'var(--accent)' }}>
+                {m.name[0]?.toUpperCase()}
+              </div>
+              <span className="text-sm" style={{ color: 'var(--text)' }}>
+                {m.name}{m.id === userId ? ' (you)' : ''}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Frequency settings panel */}
@@ -145,7 +208,6 @@ export default function HomeClient({
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         {movie ? (
           <div className="flex gap-0">
-            {/* Poster */}
             <div className="relative w-36 flex-shrink-0">
               {posterUrl ? (
                 <Image
@@ -163,7 +225,6 @@ export default function HomeClient({
               )}
             </div>
 
-            {/* Info */}
             <div className="flex-1 p-5 flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between gap-2">
@@ -222,7 +283,7 @@ export default function HomeClient({
               style={{ background: 'var(--accent)', color: '#0d0d0f' }}
             >
               <Shuffle size={16} />
-              {drawing ? 'Drawing…' : 'Draw a movie!'}
+              {drawing ? 'Drawing...' : 'Draw a movie!'}
             </button>
           </div>
         )}
